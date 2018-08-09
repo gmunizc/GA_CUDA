@@ -14,13 +14,12 @@ void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
 
-int isDone();
 void printPopulation();
 char randChar();
 int randNumb(int n);
 
 //Global Variables:
-char *target = "Hello!";
+char *target = "Hello";
 char *population[POP_SIZE];
 char *charmap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(_-)+=[]{}<>|;:',./?~` ";
 int fitness[POP_SIZE];
@@ -29,11 +28,25 @@ int fit = 0;
 
 int main()
 {
-	//Initializing population:
 	srand((unsigned int)time(NULL));
-	initialization();
+	
 
+	//Initializing population:
+	clock_t start_pop = clock();
+	initialization();
+	clock_t finished_pop = clock();
+	double popInit_time = ((double)(finished_pop - start_pop)/CLOCKS_PER_SEC);
+
+	clock_t start_fitCalc = clock();
 	fitnessCalculation();
+	clock_t finished_fitCalc = clock();
+	double fitCalc_time = ((double)(finished_fitCalc - start_fitCalc)/CLOCKS_PER_SEC);
+
+	clock_t start_evol = clock();
+	evolution();
+	clock_t finished_evol = clock();
+	double evol_time = ((double)(finished_evol - start_evol)/CLOCKS_PER_SEC);
+///*
 	printPopulation();
 
 	while(best)
@@ -42,6 +55,8 @@ int main()
 		fitnessCalculation();
 		printPopulation();
 	}
+//*/
+	printf("InitTime: %f FitTime: %f Evol: %f\n",popInit_time,fitCalc_time,evol_time);
 
 	return 0;
 }
