@@ -54,11 +54,11 @@ int main()
 
 	for(int i = 0; i < POP_SIZE; i++)	//CPU
 	{
-		population[i] = malloc(sizeof(char)*strlen(target));
+		*population[i] = malloc(sizeof(char)*strlen(target));
 	}
 	for(int j = 0; j < POP_SIZE; j++)	//GPU
 	{
-		d_population[j] = malloc(sizeof(char)*strlen(target));
+		*d_population[j] = malloc(sizeof(char)*strlen(target));
 	}
 
 
