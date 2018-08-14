@@ -11,7 +11,7 @@
 #define PERCENT_CROSS 0.2
 
 //Function declarations:
-__global__ void initialization(char **population, char *target);
+__global__ void initialization(char **population, char *target, int targetSize);
 void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
@@ -19,6 +19,8 @@ void mutation(char *mutant, int n);
 void printPopulation();
 char randChar();
 int randNumb(int n);
+__device__ char randCharDev(int targetSize);
+__device__ int randNumbDev(int n);
 
 //Global Variables:
 char *target = "Hello";
@@ -44,21 +46,21 @@ int main()
 	char *d_charmap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(_-)+=[]{}<>|;:',./?~` ";//GPU
 
 //	int fitness[POP_SIZE];	//CPU
-	int d_fitness[POP_SIZE];//GPU
+//	int d_fitness[POP_SIZE];//GPU
 //	int best = 500;			//CPU
-	int d_best = 500;			//GPU
+//	int d_best = 500;			//GPU
 //	int fit = 0;				//CPU
-	int d_fit = 0;				//GPU
+//	int d_fit = 0;				//GPU
 
 	//CPU memory allocation
 
 	for(int i = 0; i < POP_SIZE; i++)	//CPU
 	{
-		*population[i] = malloc(sizeof(char)*strlen(target));
+		population[i] =(char*)malloc(sizeof(char)*strlen(target));
 	}
 	for(int j = 0; j < POP_SIZE; j++)	//GPU
 	{
-		*d_population[j] = malloc(sizeof(char)*strlen(target));
+		d_population[j] =(char*)malloc(sizeof(char)*strlen(target));
 	}
 
 
@@ -80,7 +82,7 @@ int main()
 //	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
 
 	//Initializing population:
-	initialization<<<1,POP_SIZE>>>(population,target);
+	initialization<<<1,POP_SIZE>>>(population,target,strlen(target));
 
 	//Copy result back:
 	cudaMemcpy(population,d_population,sizeof(population),cudaMemcpyDeviceToHost);
@@ -106,15 +108,15 @@ int main()
 
 //	================================================ GA Functions ===============================================	//
 // CUDA initialization:
-__global__ void initialization(char **population, char *target)
+__global__ void initialization(char **population, char *target, int targetSize)
 {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
-		for(int j = 0; j < strlen(target); j++)
+		for(int j = 0; j < targetSize; j++)
 		{
-			population[index][j] = randChar();
+			population[index][j] = randCharDev(targetSize);
 		}
-		population[index][strlen(target)] = '\0';
-	}
+	population[index][targetSize] = '\0';
+
 }
 
 //The lesser the better. 0 is the optimal value:
@@ -208,6 +210,17 @@ char randChar()
 {
 
 	return charmap[randNumb(strlen(charmap)-1)];
+}
+
+__device__ char randCharDev(int size)
+{
+	__shared__ char *d_charmap;
+	return d_charmap[randNumbDev(size)];
+}
+
+__device__ int randNumbDev(int n)
+{
+	return (rand()%(int)(n));
 }
 
 int randNumb(int n)
