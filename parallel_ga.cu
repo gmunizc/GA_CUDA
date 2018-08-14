@@ -11,7 +11,7 @@
 #define PERCENT_CROSS 0.2
 
 //Function declarations:
-void initialization();
+__global__ void initialization(char **population, char *target);
 void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
@@ -63,15 +63,15 @@ int main()
 
 
 	//GPU memory allocation 
-	cudaMalloc((void **)&d_target,sizeof(char)*strlen(target));
+	cudaMalloc((char **)&d_target,sizeof(char)*strlen(target));
 	cudaMalloc((void **)&d_population,sizeof(population));
 	for (int k = 0; k < POP_SIZE; k++)
 	{
-		cudaMalloc((void**)&d_population[k],sizeof(char)*strlen(target));
+		cudaMalloc((char**)&d_population[k],sizeof(char)*strlen(target));
 	}
 //	cudaMalloc((void**)&d_best,sizeof(int));
 //	cudaMalloc((void**)&d_fit,sizeof(int));
-	cudaMalloc((void**)&d_charmap,sizeof(char)*strlen(charmap));
+	cudaMalloc((char**)&d_charmap,sizeof(char)*strlen(charmap));
 	
 	//Sending data to GPU
 	cudaMemcpy(d_target,target,strlen(target)*sizeof(char),cudaMemcpyHostToDevice);
