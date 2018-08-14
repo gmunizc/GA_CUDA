@@ -32,11 +32,64 @@ int main()
 {
 	
 	srand((unsigned int)time(NULL));
+	
+	//Variables
 
-	//struct timeval initializationTime
+//	char *target = "Hello";					//CPU
+	char *d_target;							//GPU
+//	char *population[POP_SIZE];			//CPU
+	char *d_population[POP_SIZE];			//GPU
+
+//	char *charmap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(_-)+=[]{}<>|;:',./?~` ";	//CPU
+	char *d_charmap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(_-)+=[]{}<>|;:',./?~` ";//GPU
+
+//	int fitness[POP_SIZE];	//CPU
+	int d_fitness[POP_SIZE];//GPU
+//	int best = 500;			//CPU
+	int d_best = 500;			//GPU
+//	int fit = 0;				//CPU
+	int d_fit = 0;				//GPU
+
+	//CPU memory allocation
+
+	for(int i = 0; i < POP_SIZE; i++)	//CPU
+	{
+		population[i] = malloc(sizeof(char)*strlen(target));
+	}
+	for(int j = 0; j < POP_SIZE; j++)	//GPU
+	{
+		d_population[j] = malloc(sizeof(char)*strlen(target));
+	}
+
+
+	//GPU memory allocation 
+	cudaMalloc((void **)&d_target,sizeof(char)*strlen(target));
+	cudaMalloc((void **)&d_population,sizeof(population));
+	for (int k = 0; k < POP_SIZE; k++)
+	{
+		cudaMalloc((void**)&d_population[k],sizeof(char)*strlen(target));
+	}
+//	cudaMalloc((void**)&d_best,sizeof(int));
+//	cudaMalloc((void**)&d_fit,sizeof(int));
+	cudaMalloc((void**)&d_charmap,sizeof(char)*strlen(charmap));
+	
+	//Sending data to GPU
+	cudaMemcpy(d_target,target,strlen(target)*sizeof(char),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_charmap,charmap,strlen(charmap)*sizeof(char),cudaMemcpyHostToDevice);
+//	cudaMemcpy(d_best,best,sizeof(int),cudaMemcpyHostToDevice);
+//	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
 
 	//Initializing population:
-	initialization();
+	initialization<<<1,POP_SIZE>>>(population,target);
+
+	//Copy result back:
+	cudaMemcpy(population,d_population,sizeof(population),cudaMemcpyDeviceToHost);
+
+	//Clean GPU:
+	cudaFree(d_target); cudaFree(d_charmap);
+	for(int p = 0; p < POP_SIZE; p++)
+      cudaFree(d_population[p]);
+    cudaFree(d_population);
 
 	fitnessCalculation();
 	printPopulation();
@@ -52,19 +105,15 @@ int main()
 }
 
 //	================================================ GA Functions ===============================================	//
-
-__global__ void initialization()
+// CUDA initialization:
+__global__ void initialization(char **population, char *target)
 {
-	int i = 0;
-	while(i < POP_SIZE)
-	{
-		population[i] = malloc(sizeof(target));
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
 		for(int j = 0; j < strlen(target); j++)
 		{
-			population[i][j] = randChar();
+			population[index][j] = randChar();
 		}
-		population[i][strlen(target)] = '\0';
-		i++;
+		population[index][strlen(target)] = '\0';
 	}
 }
 
