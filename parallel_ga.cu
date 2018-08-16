@@ -237,17 +237,6 @@ char randChar()
 	return charmap[randNumb(strlen(charmap))];
 }
 
-__device__ char randCharDev(int size)
-{
-	__shared__ char *d_charmap;
-	return d_charmap[randNumbDev(size)];
-}
-
-__device__ int randNumbDev(int n)
-{
-	return (rand()%(int)(n));
-}
-
 int randNumb(int n)
 {
 	return (rand()%(int)(n));
