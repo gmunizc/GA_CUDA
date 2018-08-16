@@ -14,7 +14,7 @@
 __global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states);
 __global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int *best, int *fit);
 void fitnessCalculation();
-__global__ evolution(int *fitness, char **population, char *target, int targetSize, int *best, int *fit);
+__global__ evolution(int *d_fitness, int *best, int *fit);
 void evolution();
 void mutation(char *mutant, int n);
 
@@ -135,7 +135,7 @@ int main()
 	while(best)
 	{
 //		evolution();
-		evolution<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
+		evolution(d_fitness,d_best,d_fit);
 		fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
 		printPopulation();
 		
@@ -200,7 +200,7 @@ void fitnessCalculation()
 	}
 }
 
-__global__ void evolution(int *fitness, char **population, char *target, int targetSize, int *best, int *fit)
+__global__ void evolution(int *d_fitness, int *best, int *fit)
 {
 
 	int j = 0;
@@ -227,7 +227,7 @@ __global__ void evolution(int *fitness, char **population, char *target, int tar
 				}
 
 
-				fitnessCalculation();
+				fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
 				j++;
 				break;
 			}
