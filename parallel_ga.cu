@@ -98,7 +98,10 @@ int main()
 	  cudaMemcpy(d_seed, h_seed, sizeof(unsigned int)*POP_SIZE,cudaMemcpyHostToDevice);
 
 	//Initializing population:
+	clock_t start_pop = clock();
 	initialization<<<1,POP_SIZE>>>(population,target,strlen(target),d_charmap,strlen(charmap),d_seed,states);
+	clock_t finished_pop = clock();
+	double popInit_time = ((double)(finished_pop - start_pop)/CLOCKS_PER_SEC);
 
 	// Cleaning up random init:
 	  cudaFree(states); cudaFree(d_seed);
@@ -114,7 +117,17 @@ int main()
       cudaFree(d_population[p]);
     cudaFree(d_population);
 
+
+	clock_t start_fitCalc = clock();
 	fitnessCalculation();
+	clock_t finished_fitCalc = clock();
+	double fitCalc_time = ((double)(finished_fitCalc - start_fitCalc)/CLOCKS_PER_SEC);
+
+	clock_t start_evol = clock();
+	evolution();
+	clock_t finished_evol = clock();
+	double evol_time = ((double)(finished_evol - start_evol)/CLOCKS_PER_SEC);
+
 	printPopulation();
 
 	while(best)
@@ -123,6 +136,8 @@ int main()
 		fitnessCalculation();
 		printPopulation();
 	}
+
+	printf("InitTime: %f FitTime: %f Evol: %f\n",popInit_time,fitCalc_time,evol_time);
 
 	return 0;
 }
