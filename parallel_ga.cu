@@ -12,7 +12,7 @@
 
 //Function declarations:
 __global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states);
-__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int best, int fit);
+__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int *best, int *fit);
 void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
@@ -49,9 +49,9 @@ int main()
 //	int fitness[POP_SIZE];	//CPU
 	int d_fitness[POP_SIZE];//GPU
 //	int best = 500;			//CPU
-	int d_best = 500;			//GPU
+	int *d_best;			//GPU
 //	int fit = 0;				//CPU
-	int d_fit = 0;				//GPU
+	int *d_fit;				//GPU
 
 	//CPU memory allocation
 
@@ -75,14 +75,14 @@ int main()
 	cudaMalloc((char**)&d_charmap,sizeof(char)*strlen(charmap));
 
 	cudaMalloc((void**)&d_fitness,sizeof(fitness));
-	cudaMalloc((int*)&d_best,sizeof(int));
-	cudaMalloc((int*)&d_fit,sizeof(int));
+	cudaMalloc((void**)&d_best,sizeof(int));
+	cudaMalloc((void**)&d_fit,sizeof(int));
 	
 	//Sending data to GPU
 	cudaMemcpy(d_target,target,strlen(target)*sizeof(char),cudaMemcpyHostToDevice);
 	cudaMemcpy(d_charmap,charmap,strlen(charmap)*sizeof(char),cudaMemcpyHostToDevice);
-	cudaMemcpy(d_best,best,sizeof(int),cudaMemcpyHostToDevice);
-	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_best,&best,sizeof(int),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_fit,&fit,sizeof(int),cudaMemcpyHostToDevice);
 
 
 	//Initializing random seed and allocating it both on CPU and GPU:
@@ -130,14 +130,14 @@ int main()
 	double evol_time = ((double)(finished_evol - start_evol)/CLOCKS_PER_SEC);
 
 	printPopulation();
-
+///*
 	while(best)
 	{
 		evolution();
 		fitnessCalculation();
 		printPopulation();
 	}
-
+//*/
 	printf("InitTime: %f FitTime: %f Evol: %f\n",popInit_time,fitCalc_time,evol_time);
 
 	return 0;
@@ -161,7 +161,7 @@ __global__ void initialization(char **population, char *target, int targetSize, 
 }
 
 //The lesser the better. 0 is the optimal value:
-__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int best, int fit)
+__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int *best, int *fit)
 {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -170,10 +170,10 @@ __global__ void fitnessCalculation(int *fitness, char **population, char *target
 	{
 		fitness[index] += abs(target[j]-population[index][j]);
 	}
-	if(fitness[index] < best)
+	if(fitness[index] < *best)
 	{
-		best = fitness[index];
-		fit = index;
+		*best = fitness[index];
+		*fit = index;
 	}
 }
 
