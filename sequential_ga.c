@@ -168,7 +168,7 @@ void printPopulation()
 char randChar()
 {
 
-	return charmap[randNumb(strlen(charmap)-1)];
+	return charmap[randNumb(strlen(charmap))];
 }
 
 int randNumb(int n)
