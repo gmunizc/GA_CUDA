@@ -14,6 +14,7 @@
 __global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states);
 __global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int *best, int *fit);
 void fitnessCalculation();
+__global__ evolution(int *fitness, char **population, char *target, int targetSize, int *best, int *fit);
 void evolution();
 void mutation(char *mutant, int n);
 
@@ -134,7 +135,7 @@ int main()
 	while(best)
 	{
 //		evolution();
-		evolution();
+		evolution<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
 		fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
 		printPopulation();
 		
@@ -196,6 +197,50 @@ void fitnessCalculation()
 			fit = i;
 		}
 		i--;
+	}
+}
+
+__global__ void evolution(int *fitness, char **population, char *target, int targetSize, int *best, int *fit)
+{
+
+	int j = 0;
+	char *newBorn = population[fit];
+	int lucky;
+	for(int i = 0; i < POP_SIZE; i++)
+	{
+		while(1)
+		{
+			if(j >= POP_SIZE)
+			{
+				j = 0;
+			}
+			//Selection:
+			if(fitness[j] <= best)
+			{
+				newBorn = population[j];
+				
+				//Mutation:
+				lucky = randNumb(POP_SIZE);
+				if(lucky != j)
+				{
+					mutation(population[lucky],randNumb(CHANCE));
+				}
+
+
+				fitnessCalculation();
+				j++;
+				break;
+			}
+			//Crossover:
+			else
+			{
+				for(int n = 0; n < strlen(target)*PERCENT_CROSS; n++)
+				{
+					population[j][randNumb(strlen(target))] = newBorn[randNumb(strlen(target))];
+				}
+			}
+			j++;
+		}
 	}
 }
 
