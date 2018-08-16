@@ -36,7 +36,7 @@ int main(){
   // veja somente parametros d_seed e states
   randWork<<<1,nThreads>>>(d_seed ,states,d_rnumbs);
 
-  cudaMemcpy(d_rnumbs, rnumbs, sizeof(int)*nThreads,cudaMemcpyDeviceToHost);
+  cudaMemcpy(rnumbs, d_rnumbs, sizeof(int)*nThreads,cudaMemcpyDeviceToHost);
 
   cudaFree(states); cudaFree(d_seed);
   free(h_seed);
