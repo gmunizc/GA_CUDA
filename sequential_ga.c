@@ -4,7 +4,7 @@
 #include <time.h>
 
 //Constant Declarations:
-#define POP_SIZE 8
+#define POP_SIZE 2048
 #define CHANCE 3
 #define PERCENT_CROSS 0.2
 
@@ -47,16 +47,20 @@ int main()
 	clock_t finished_evol = clock();
 	double evol_time = ((double)(finished_evol - start_evol)/CLOCKS_PER_SEC);
 ///*
+
 	printPopulation();
 
+	int nIterations = 0;
 	while(best)
 	{
 		evolution();
 		fitnessCalculation();
 		printPopulation();
+
+		nIterations++;
 	}
 //*/
-	printf("InitTime: %f FitTime: %f Evol: %f\n",popInit_time,fitCalc_time,evol_time);
+	printf("InitTime: %f FitTime: %f Evol: %f nIterations: %d\n",popInit_time,fitCalc_time,evol_time,nIterations);
 
 	return 0;
 }
