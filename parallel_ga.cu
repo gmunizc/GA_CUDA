@@ -12,6 +12,7 @@
 
 //Function declarations:
 __global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states);
+__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int best, int fit);
 void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
@@ -46,11 +47,11 @@ int main()
 	char *d_charmap = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*(_-)+=[]{}<>|;:',./?~` ";//GPU
 
 //	int fitness[POP_SIZE];	//CPU
-//	int d_fitness[POP_SIZE];//GPU
+	int d_fitness[POP_SIZE];//GPU
 //	int best = 500;			//CPU
-//	int d_best = 500;			//GPU
+	int d_best = 500;			//GPU
 //	int fit = 0;				//CPU
-//	int d_fit = 0;				//GPU
+	int d_fit = 0;				//GPU
 
 	//CPU memory allocation
 
@@ -71,15 +72,17 @@ int main()
 	{
 		cudaMalloc((char**)&d_population[k],sizeof(char)*strlen(target));
 	}
-//	cudaMalloc((void**)&d_best,sizeof(int));
-//	cudaMalloc((void**)&d_fit,sizeof(int));
 	cudaMalloc((char**)&d_charmap,sizeof(char)*strlen(charmap));
+
+	cudaMalloc((void**)&d_fitness,sizeof(fitness));
+	cudaMalloc((void**)&d_best,sizeof(int));
+	cudaMalloc((void**)&d_fit,sizeof(int));
 	
 	//Sending data to GPU
 	cudaMemcpy(d_target,target,strlen(target)*sizeof(char),cudaMemcpyHostToDevice);
 	cudaMemcpy(d_charmap,charmap,strlen(charmap)*sizeof(char),cudaMemcpyHostToDevice);
-//	cudaMemcpy(d_best,best,sizeof(int),cudaMemcpyHostToDevice);
-//	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_best,best,sizeof(int),cudaMemcpyHostToDevice);
+	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
 
 
 	//Initializing random seed and allocating it both on CPU and GPU:
@@ -90,10 +93,8 @@ int main()
 	  {
 	    h_seed[i] = rand()%100000;
 	  }
-	
 	  cudaMalloc((void**) &states, POP_SIZE * sizeof(curandState_t));
 	  unsigned int *d_seed;
-	
 	  cudaMalloc((void**)&d_seed, sizeof(unsigned int)*POP_SIZE);
 	  cudaMemcpy(d_seed, h_seed, sizeof(unsigned int)*POP_SIZE,cudaMemcpyHostToDevice);
 
@@ -117,9 +118,9 @@ int main()
       cudaFree(d_population[p]);
     cudaFree(d_population);
 
-
+	//Calculating Fitness:
 	clock_t start_fitCalc = clock();
-	fitnessCalculation();
+	fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target, strlen(target), d_best, d_fit)
 	clock_t finished_fitCalc = clock();
 	double fitCalc_time = ((double)(finished_fitCalc - start_fitCalc)/CLOCKS_PER_SEC);
 
@@ -160,6 +161,22 @@ __global__ void initialization(char **population, char *target, int targetSize, 
 }
 
 //The lesser the better. 0 is the optimal value:
+__global__ void fitnessCalculation(int *fitness, char **population, char *target, int targetSize, int best, int fit)
+{
+	int index = blockDim.x * blockIdx.x + threadIdx.x;
+
+	fitness[index] = 0;
+	for (int j = (int)sizeof(target)-1; j >= 0; j--) 
+	{
+		fitness[index] += abs(target[j]-population[index][j]);
+	}
+	if(fitness[index] < best)
+	{
+		best = fitness[index];
+		fit = index;
+	}
+}
+
 void fitnessCalculation()
 {
 	int i = POP_SIZE-1;
