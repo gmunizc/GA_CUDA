@@ -11,7 +11,7 @@
 #define PERCENT_CROSS 0.2
 
 //Function declarations:
-__global__ void initialization(char **population, char *target, int targetSize);
+__global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states);
 void fitnessCalculation();
 void evolution();
 void mutation(char *mutant, int n);
@@ -81,8 +81,29 @@ int main()
 //	cudaMemcpy(d_best,best,sizeof(int),cudaMemcpyHostToDevice);
 //	cudaMemcpy(d_fit,fit,sizeof(int),cudaMemcpyHostToDevice);
 
+
+	//Initializing random seed and allocating it both on CPU and GPU:
+	  curandState_t* states;
+	  unsigned int *h_seed = (unsigned int*)malloc(sizeof(unsigned int)*POP_SIZE);
+	  srand(time(NULL));
+	  for(int i=0;i<POP_SIZE;i++)
+	  {
+	    h_seed[i] = rand()%100000;
+	  }
+	
+	  cudaMalloc((void**) &states, POP_SIZE * sizeof(curandState_t));
+	  unsigned int *d_seed;
+	
+	  cudaMalloc((void**)&d_seed, sizeof(unsigned int)*POP_SIZE);
+	  cudaMemcpy(d_seed, h_seed, sizeof(unsigned int)*POP_SIZE,cudaMemcpyHostToDevice);
+
 	//Initializing population:
-	initialization<<<1,POP_SIZE>>>(population,target,strlen(target));
+	initialization<<<1,POP_SIZE>>>(population,target,strlen(target),d_charmap,strlen(charmap),d_seed,states);
+
+	// Cleaning up random init:
+	  cudaFree(states); cudaFree(d_seed);
+	  free(h_seed);
+
 
 	//Copy result back:
 	cudaMemcpy(population,d_population,sizeof(population),cudaMemcpyDeviceToHost);
@@ -108,12 +129,16 @@ int main()
 
 //	================================================ GA Functions ===============================================	//
 // CUDA initialization:
-__global__ void initialization(char **population, char *target, int targetSize)
+__global__ void initialization(char **population, char *target, int targetSize, char *charmap,int charmapSize, unsigned int *seed, curandState_t* states)
 {
+	curand_init(seed[threadIdx.x],threadIdx.x,0,&states[threadIdx.x]);
+	int randNumb = curand(&states[threadIdx.x])% charmapSize;
+
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
 		for(int j = 0; j < targetSize; j++)
 		{
-			population[index][j] = randCharDev(targetSize);
+			population[index][j] = charmap[randNumb];
+			randNumb = curand(&states[(threadIdx.x)+randNumb])% charmapSize;
 		}
 	population[index][targetSize] = '\0';
 
@@ -209,7 +234,7 @@ void printPopulation()
 char randChar()
 {
 
-	return charmap[randNumb(strlen(charmap)-1)];
+	return charmap[randNumb(strlen(charmap))];
 }
 
 __device__ char randCharDev(int size)
