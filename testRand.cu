@@ -4,9 +4,8 @@
 #include <math.h>
 #include <assert.h>
 
-__global__ void randWork(unsigned int *seed, curandState_t* states)
+__global__ void randWork(unsigned int *seed, curandState_t* states, int *d_rnumbs)
 {
-   __shared__ int* d_rnumbs;
    curand_init(seed[threadIdx.x],threadIdx.x,0,&states[threadIdx.x]);
    d_rnumbs[threadIdx.x] = curand(&states[threadIdx.x])% 100;
 
@@ -35,7 +34,7 @@ int main(){
   cudaMemcpy(d_seed, h_seed, sizeof(unsigned int)*nThreads,cudaMemcpyHostToDevice);
 
   // veja somente parametros d_seed e states
-  randWork<<<1,nThreads>>>(d_seed ,states);
+  randWork<<<1,nThreads>>>(d_seed ,states,d_rnumbs);
 
   cudaMemcpy(d_rnumbs, rnumbs, sizeof(int)*nThreads,cudaMemcpyDeviceToHost);
 
