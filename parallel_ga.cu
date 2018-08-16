@@ -75,8 +75,8 @@ int main()
 	cudaMalloc((char**)&d_charmap,sizeof(char)*strlen(charmap));
 
 	cudaMalloc((void**)&d_fitness,sizeof(fitness));
-	cudaMalloc((void**)&d_best,sizeof(int));
-	cudaMalloc((void**)&d_fit,sizeof(int));
+	cudaMalloc((int*)&d_best,sizeof(int));
+	cudaMalloc((int*)&d_fit,sizeof(int));
 	
 	//Sending data to GPU
 	cudaMemcpy(d_target,target,strlen(target)*sizeof(char),cudaMemcpyHostToDevice);
@@ -120,7 +120,7 @@ int main()
 
 	//Calculating Fitness:
 	clock_t start_fitCalc = clock();
-	fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target, strlen(target), d_best, d_fit)
+	fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target, strlen(target), d_best, d_fit);
 	clock_t finished_fitCalc = clock();
 	double fitCalc_time = ((double)(finished_fitCalc - start_fitCalc)/CLOCKS_PER_SEC);
 
