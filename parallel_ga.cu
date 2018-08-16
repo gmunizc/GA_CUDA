@@ -133,8 +133,9 @@ int main()
 	int nIterations = 0;
 	while(best)
 	{
+//		evolution();
 		evolution();
-		fitnessCalculation();
+		fitnessCalculation<<<1,POP_SIZE>>>(d_fitness,population,target,strlen(target),d_best,d_fit);
 		printPopulation();
 		
 		nIterations++;
